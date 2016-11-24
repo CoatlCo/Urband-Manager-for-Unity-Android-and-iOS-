@@ -6,6 +6,7 @@ public class SelectDeviceUIManager : MonoBehaviour {
 	// Public Vars
 	public GameObject loading;
 	public GameObject deviceList;
+	public GameObject buttonVibration;
 	public Image urbandImage;
 	public string scene;
 	// Private Vars
@@ -24,10 +25,11 @@ public class SelectDeviceUIManager : MonoBehaviour {
 				UIIsHidden = true;
 				loading.SetActive (false);
 				deviceList.SetActive (false);
+				buttonVibration.SetActive (true);
 				Color c = urbandImage.color;
 				c.a = 1;
 				urbandImage.color = c;
-				//BluetoothLEHardwareInterface.DisconnectPeripheral (connectToDevice._connectedID, (action) => {});
+				//connectToDevice.OnDisConnect ();
 				SceneManager.LoadSceneAsync (scene);
 			}
 		}

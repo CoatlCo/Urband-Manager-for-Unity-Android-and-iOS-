@@ -6,10 +6,13 @@ public class DetectDevice : MonoBehaviour
 {
 	// Private Vars
 	private bool _scanning = false;
+	private AddButtons addButtons;
 	private ConnectToUrbandSharedInstance connectToDevice;
 
 	public void Initialize ()
 	{
+		GameObject listView = GameObject.Find ("List");
+		addButtons = listView.GetComponent<AddButtons> ();
 		connectToDevice.InitBluetoothLE (() => {
 			OnScan ();	
 		});
@@ -32,6 +35,7 @@ public class DetectDevice : MonoBehaviour
 		// advertising data available
 		BluetoothLEHardwareInterface.ScanForPeripheralsWithServices (null, (address, name) => {
 			// Detect only urband devices
+			//if(address == "B0:B4:48:DD:69:ED")
 			if(name.Contains("Urband"))
 				AddPeripheral (name, address);
 		}, (address, name, rssi, advertisingInfo) => {
@@ -42,8 +46,7 @@ public class DetectDevice : MonoBehaviour
 	void AddPeripheral (string name, string address)
 	{
 		// Stop device Scan
-		BluetoothLEHardwareInterface.StopScan ();
-		connectToDevice.OnConnect (address);
+		addButtons.addButton(name, address);
 	}
 
 	// Use this for initialization
