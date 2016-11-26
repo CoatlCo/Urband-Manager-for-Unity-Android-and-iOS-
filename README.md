@@ -16,5 +16,7 @@ Values:
 Hex   -  Value received in Unity
 
 0x16  -  22  Double Spin
+
 0x15  -  21  Double Tap
+
 0x14  -  20  Hand rotate
