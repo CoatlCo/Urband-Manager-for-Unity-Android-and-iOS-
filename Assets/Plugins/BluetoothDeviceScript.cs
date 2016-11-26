@@ -27,7 +27,7 @@ public class BluetoothDeviceScript : MonoBehaviour
 	public Action<string, byte[]> DidUpdateCharacteristicValueAction;
 	public Action<string, string, byte[]> DidUpdateCharacteristicValueWithDeviceAddressAction;
 
-	private bool Initialized;
+	public bool Initialized;
 
 	// Use this for initialization
 	void Start ()

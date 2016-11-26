@@ -70,8 +70,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	
 	}
 
-	public void InitBluetoothLE(System.Action action){
-		BluetoothLEHardwareInterface.Initialize (true, false, () => {
+	public void InitBluetoothLE(bool isFirstInit, System.Action action){
+		BluetoothLEHardwareInterface.Initialize (true, false, isFirstInit, () => {
 			if(deviceIsSelected)
 				beginConnection();
 			else
@@ -87,14 +87,13 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		beginConnection();
 	}
 
-	public void OnDisConnect ()
+	public void OnDisConnect (System.Action action)
 	{
 		Debug.Log("------------- >>>>>>>>> <<<<<<<< OnDisConnect");
-		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, (action) => {
+		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, (action2) => {
 			Debug.Log("------------- >>>>>>>>> OnDisConnect Correct");
+			action();
 		});
-		count = 0;
-		_connecting = false;
 	}
 
 	// Write Characteristic
@@ -120,7 +119,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	// Init connection
 	void beginConnection() {
 		Debug.Log("------------- _connectedID: " + _connectedID + " _connecting: " + _connecting);
-		//if (!_connecting) {
+		if (!_connecting) {
 			Debug.Log("------------- >>>>>>>>>>>>> ConnectToPeripheral");
 			BluetoothLEHardwareInterface.ConnectToPeripheral (_connectedID, 
 				(address) => {
@@ -144,17 +143,20 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 				// be aware that this will also get called when the disconnect
 				// is called above. both methods get call for the same action
 				// this is for backwards compatibility
-				//Connected = false;
+				count = 0;
+				_connecting = false;
+				Debug.Log("---------------- ++++++++++++++++ Peripheal Disconected");
 			});
 
 			_connecting = true;
-		/*} else {
+		} else {
 			firstConnection ();
-		}*/
+		}
 	}
 
 	// Suscribe and send fisrt detection msj
 	void firstConnection(){
+		//MakeUrbandRumble ();
 		Debug.Log("------------- >>>>>>>>>>>>> firstConnection");
 		BluetoothLEHardwareInterface.SubscribeCharacteristicWithDeviceAddress (
 			_connectedID, 
@@ -164,6 +166,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 				
 			}, 
 			(deviceAddress2, characteristic, data) => {
+				Debug.Log("----------- Count: " + count + " - Gesture: " + data[0]);
 				if(isFirst) {
 					if(data[0] == 17) {
 						isFirst = false;
@@ -183,13 +186,13 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 										Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble UnSuscribe" + action2);
 										connectSegureService();
 									});
-							});
+							}
+						);
 					}	
 				}
 				// Afther urband is secure connected, Listen and notify urband gestures
 				if(urbanConnected)
 				{
-					Debug.Log("----------- Count: " + count + " - Gesture: " + data[0]);
 					if(!listenUrbandMeasure){
 						//Listen mode deactivated
 
@@ -270,17 +273,38 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		// Send rumble action data to Urband
 		Debug.Log("------------ Haptics: " + Haptics + " Service: " + HapticsConfig);
 		byte[] value = new byte[] {0x00,0x64,0x00,0x64,0x20,0x20,0x20,0x20,0x01,0x85,0xCE,0xFF};
-		SendByte(value, Haptics, HapticsConfig, (action) => {
-			Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble HapticsConfig: " + action);
+		SendByte(value, Haptics, HapticsConfig, (action2) => {
+			Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble HapticsConfig: " + action2);
 			byte[] value2 = new byte[] {(byte)0x01};
-			SendByte(value2, Haptics, HapticsControl, (action2) => {});
+			SendByte(value2, Haptics, HapticsControl, (action3) => {});
 		});
 	}
 
-	/*int IntToHex(){
-		// Store integer 182
-		int intValue = 182;
-		// Convert integer 182 as a hex in a string variable
-		string hexValue = intValue.ToString("X");
-	}*/
+	void SendIdent(){
+		Debug.Log ("-------------- - _______________ On SendIdent");
+		BluetoothLEHardwareInterface.SubscribeCharacteristicWithDeviceAddress (
+			_connectedID, 
+			UrbandS, 
+			UrbandSGesture, 
+			(deviceAddress, notification) => {
+				Debug.Log("----------- ________________ On SendIdent Notification: ");
+				isFirst = false;
+				// Send first detection msj
+				/*byte[] value = new byte[] { (byte)0x00 };
+				SendByte (
+					value,
+					UrbandS,
+					UrbandSGesture, 
+					(action) => {
+						Debug.Log ("---------------- __________________ Ident Send Ok");
+						byte[] value2 = new byte[] {(byte)0x01};
+						SendByte(value2, Haptics, HapticsControl, (action3) => {});
+					}
+				);*/
+			}, 
+			(deviceAddress2, characteristic, data) => {
+				Debug.Log("----------- Count: " + count + " - Gesture: " + data[0]);
+			}
+		);
+	}
 }

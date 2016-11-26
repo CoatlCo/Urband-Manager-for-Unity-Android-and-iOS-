@@ -13,7 +13,7 @@ public class DetectDevice : MonoBehaviour
 	{
 		GameObject listView = GameObject.Find ("List");
 		addButtons = listView.GetComponent<AddButtons> ();
-		connectToDevice.InitBluetoothLE (() => {
+		connectToDevice.InitBluetoothLE (true, () => {
 			OnScan ();	
 		});
 	}

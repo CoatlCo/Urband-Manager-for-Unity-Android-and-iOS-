@@ -15,7 +15,7 @@ public class SampleShowGestures : MonoBehaviour {
 		//Connect to device instance
 		GameObject conectGO = GameObject.Find ("ConnectToUrbandSharedInstance");
 		connectToDevice = conectGO.GetComponent<ConnectToUrbandSharedInstance> ();
-		connectToDevice.InitBluetoothLE (() => {
+		connectToDevice.InitBluetoothLE (false, () => {
 		});
 	}
 	

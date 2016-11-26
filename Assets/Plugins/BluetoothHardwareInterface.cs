@@ -114,30 +114,26 @@ public class BluetoothLEHardwareInterface
 		}
 	}
 
-	public static BluetoothDeviceScript Initialize (bool asCentral, bool asPeripheral, Action action, Action<string> errorAction)
+	public static BluetoothDeviceScript Initialize (bool asCentral, bool asPeripheral, bool isFirst, Action action, Action<string> errorAction)
 	{
 		bluetoothDeviceScript = null;
 
-		if (GameObject.Find("BluetoothLEReceiver") == null)
-		{
-			GameObject bluetoothLEReceiver = new GameObject("BluetoothLEReceiver");
-			bluetoothDeviceScript = bluetoothLEReceiver.AddComponent<BluetoothDeviceScript>();
-			if (bluetoothDeviceScript != null)
-			{
+		if (GameObject.Find ("BluetoothLEReceiver") == null) {
+			GameObject bluetoothLEReceiver = new GameObject ("BluetoothLEReceiver");
+			bluetoothDeviceScript = bluetoothLEReceiver.AddComponent<BluetoothDeviceScript> ();
+			if (bluetoothDeviceScript != null) {
 				bluetoothDeviceScript.InitializedAction = action;
 				bluetoothDeviceScript.ErrorAction = errorAction;
 			}
 		}
-		
-		if (Application.isEditor)
-		{
-			if (bluetoothDeviceScript != null)
-				bluetoothDeviceScript.SendMessage ("OnBluetoothMessage", "Initialized");
-		}
-		else
-		{
+
+		if (isFirst) {
+			if (Application.isEditor) {
+				if (bluetoothDeviceScript != null)
+					bluetoothDeviceScript.SendMessage ("OnBluetoothMessage", "Initialized");
+			} else {
 #if UNITY_IPHONE
-			_iOSBluetoothLEInitialize (asCentral, asPeripheral);
+				_iOSBluetoothLEInitialize (asCentral, asPeripheral);
 #elif UNITY_ANDROID
 			if (_android == null)
 			{
@@ -148,6 +144,7 @@ public class BluetoothLEHardwareInterface
 			if (_android != null)
 				_android.Call ("androidBluetoothInitialize", asCentral, asPeripheral);
 #endif
+			}
 		}
 
 		return bluetoothDeviceScript;
