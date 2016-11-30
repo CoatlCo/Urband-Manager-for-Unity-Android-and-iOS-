@@ -35,8 +35,8 @@ public class DetectDevice : MonoBehaviour
 		// advertising data available
 		BluetoothLEHardwareInterface.ScanForPeripheralsWithServices (null, (address, name) => {
 			// Detect only urband devices
+			//if(name.Contains("Urband"))
 			//if(address == "B0:B4:48:DD:69:ED")
-			if(name.Contains("Urband"))
 				AddPeripheral (name, address);
 		}, (address, name, rssi, advertisingInfo) => {
 			
@@ -46,7 +46,8 @@ public class DetectDevice : MonoBehaviour
 	void AddPeripheral (string name, string address)
 	{
 		// Stop device Scan
-		addButtons.addButton(name, address);
+		//addButtons.addButton(name, address);
+		connectToDevice.OnConnect(address);
 	}
 
 	// Use this for initialization
