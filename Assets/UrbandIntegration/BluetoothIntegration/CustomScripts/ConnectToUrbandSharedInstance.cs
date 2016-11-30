@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	// Private Vars
@@ -49,6 +50,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	public bool detectDoubleTab = true;
 	public bool listenUrbandMeasure = false;
 	public int urbandMeasure;
+	public Text logText;
 
 	void Awake()
 	{
@@ -76,8 +78,9 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 				beginConnection();
 			else
 				action();
-		}, (error) => {
-		});
+			}, (error) => {
+			}
+		);
 	}
 
 	public void OnConnect (string addressText)
@@ -89,9 +92,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 	public void OnDisConnect (System.Action action)
 	{
-		Debug.Log("------------- >>>>>>>>> <<<<<<<< OnDisConnect");
 		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, (action2) => {
-			Debug.Log("------------- >>>>>>>>> OnDisConnect Correct");
 			action();
 		});
 	}
@@ -104,23 +105,25 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		System.Action<string> action
 		)
 	{
-		Debug.Log("------------- >>>>>>>>>>>>> value.Length: " + _connectedID);
+		if(logText)
+			logText.text = "value.Length: " + _connectedID;
 		BluetoothLEHardwareInterface.WriteCharacteristic (
 			_connectedID, 
 			_serviceUUID, 
 			_writeCharacteristicUUID, 
 			value, value.Length, true, (characteristicUUID) => {
 				BluetoothLEHardwareInterface.Log ("Write Succeeded");
-				Debug.Log("----------- ---------- >>>>>>>>>>>>> Chars: " + characteristicUUID);
+				logText.text = "Chars: " + characteristicUUID;
 				action(characteristicUUID);
 			});
 	}
 
 	// Init connection
 	void beginConnection() {
-		Debug.Log("------------- _connectedID: " + _connectedID + " _connecting: " + _connecting);
+		if(logText)
+			logText.text = "_connectedID: " + _connectedID + " _connecting: " + _connecting;
 		if (!_connecting) {
-			Debug.Log("------------- >>>>>>>>>>>>> ConnectToPeripheral");
+			logText.text = "ConnectToPeripheral";
 			BluetoothLEHardwareInterface.ConnectToPeripheral (_connectedID, 
 				(address) => {
 					// on Connection Action
@@ -129,7 +132,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 					// Service detection
 				},
 				(address, serviceUUID, characteristicUUID) => {
-					Debug.Log("------------- count: " + count + " >>>>>>>>>>>>> characteristicUUID: " + characteristicUUID);
+					if(logText)
+						logText.text = "count: " + count + " - characteristicUUID: " + characteristicUUID;
 					// Characteristis detection
 					urbanDetected = true;
 					if (count < serviceLimit)
@@ -139,13 +143,14 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 					}
 
 				}, (address) => {
-				// this will get called when the device disconnects
-				// be aware that this will also get called when the disconnect
-				// is called above. both methods get call for the same action
-				// this is for backwards compatibility
-				count = 0;
-				_connecting = false;
-				Debug.Log("---------------- ++++++++++++++++ Peripheal Disconected");
+					// this will get called when the device disconnects
+					// be aware that this will also get called when the disconnect
+					// is called above. both methods get call for the same action
+					// this is for backwards compatibility
+					count = 0;
+					_connecting = false;
+					if(logText)
+						logText.text = "Peripheal Disconected";
 			});
 
 			_connecting = true;
@@ -157,7 +162,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	// Suscribe and send fisrt detection msj
 	void firstConnection(){
 		//MakeUrbandRumble ();
-		Debug.Log("------------- >>>>>>>>>>>>> firstConnection");
+		if(logText)
+			logText.text = "firstConnection";
 		BluetoothLEHardwareInterface.SubscribeCharacteristicWithDeviceAddress (
 			_connectedID, 
 			UrbandS, 
@@ -166,7 +172,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 				
 			}, 
 			(deviceAddress2, characteristic, data) => {
-				Debug.Log("----------- Count: " + count + " - Gesture: " + data[0]);
+				if(logText)
+					logText.text = "Count: " + count + " - Gesture: " + data[0];
 				if(isFirst) {
 					if(data[0] == 17) {
 						isFirst = false;
@@ -183,7 +190,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 									UrbandS, 
 									UrbandSGesture,
 									(action2) => {
-										Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble UnSuscribe" + action2);
+										if(logText)
+											Debug.Log("MakeUrbandRumble UnSuscribe" + action2);
 										connectSegureService();
 									});
 							}
@@ -255,7 +263,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 								SecureService, 
 								SecureServiceConnection,
 								(action2) => {
-									Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble UnSuscribe" + action2);
+									if(logText)
+										logText.text = " UnSuscribe" + action2;
 									// Suscribe to gesture service again
 									firstConnection();
 								}
@@ -271,10 +280,12 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 	public void MakeUrbandRumble(){
 		// Send rumble action data to Urband
-		Debug.Log("------------ Haptics: " + Haptics + " Service: " + HapticsConfig);
+		if(logText)
+			logText.text = "Haptics: " + Haptics + " Service: " + HapticsConfig;
 		byte[] value = new byte[] {0x00,0x64,0x00,0x64,0x20,0x20,0x20,0x20,0x01,0x85,0xCE,0xFF};
 		SendByte(value, Haptics, HapticsConfig, (action2) => {
-			Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble HapticsConfig: " + action2);
+			if(logText)
+				logText.text = "MakeUrbandRumble HapticsConfig: " + action2;
 			byte[] value2 = new byte[] {(byte)0x01};
 			SendByte(value2, Haptics, HapticsControl, (action3) => {});
 		});

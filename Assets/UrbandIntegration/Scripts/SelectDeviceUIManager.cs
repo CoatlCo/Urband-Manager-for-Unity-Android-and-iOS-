@@ -29,9 +29,7 @@ public class SelectDeviceUIManager : MonoBehaviour {
 				Color c = urbandImage.color;
 				c.a = 1;
 				urbandImage.color = c;
-				//connectToDevice.OnDisConnect (() => {
-					SceneManager.LoadSceneAsync (scene);
-				//});
+				SceneManager.LoadSceneAsync (scene);
 			}
 		}
 	}
