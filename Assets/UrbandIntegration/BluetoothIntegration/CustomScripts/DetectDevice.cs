@@ -7,6 +7,7 @@ public class DetectDevice : MonoBehaviour
 	// Private Vars
 	private bool _scanning = false;
 	private ConnectToUrbandSharedInstance connectToDevice;
+	private AddButtons addButtons;
 
 	public void Initialize ()
 	{
@@ -42,8 +43,9 @@ public class DetectDevice : MonoBehaviour
 	void AddPeripheral (string name, string address)
 	{
 		// Stop device Scan
-		BluetoothLEHardwareInterface.StopScan ();
-		connectToDevice.OnConnect (address);
+		//BluetoothLEHardwareInterface.StopScan ();
+		//connectToDevice.OnConnect (address);
+		addButtons.addButton(name, address);
 	}
 
 	// Use this for initialization
@@ -51,6 +53,7 @@ public class DetectDevice : MonoBehaviour
 	{
 		GameObject connectGObj = GameObject.Find ("ConnectToUrbandSharedInstance");
 		connectToDevice = connectGObj.GetComponent<ConnectToUrbandSharedInstance> ();
+		addButtons = GameObject.Find ("List").GetComponent<AddButtons> ();
 		Initialize ();
 	}
 }

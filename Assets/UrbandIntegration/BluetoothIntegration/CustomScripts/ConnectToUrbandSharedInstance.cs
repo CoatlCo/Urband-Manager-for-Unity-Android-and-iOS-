@@ -84,7 +84,12 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	{
 		_connectedID = addressText;
 		deviceIsSelected = true;
-		beginConnection();
+		beginConnection((connectionOk) => {
+			if(connectionOk)
+				firstConnection();
+			else
+				beginConnection();
+		});
 	}
 
 	public void OnDisConnect ()
@@ -106,13 +111,12 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 			_writeCharacteristicUUID, 
 			value, value.Length, true, (characteristicUUID) => {
 				BluetoothLEHardwareInterface.Log ("Write Succeeded");
-				Debug.Log("----------- ---------- >>>>>>>>>>>>> Chars: " + characteristicUUID);
 				action(characteristicUUID);
 			});
 	}
 
 	// Init connection
-	void beginConnection() {
+	void beginConnection(System.Action<bool> action) {
 		if (!_connecting) {
 			BluetoothLEHardwareInterface.ConnectToPeripheral (_connectedID, 
 				(address) => {
@@ -127,10 +131,15 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 					if (count < serviceLimit)
 						count++;
 					else {
-						firstConnection ();
+						action(true);
 					}
 
-				}, (address) => {
+				}, (error) => {
+					//On connection error
+					Debug.Log("============================= Error On Connect: " + error);
+					action(false);
+				},
+				(address) => {
 				// this will get called when the device disconnects
 				// be aware that this will also get called when the disconnect
 				// is called above. both methods get call for the same action
@@ -140,7 +149,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 			_connecting = true;
 		} else {
-			firstConnection ();
+			action(true);
 		}
 	}
 
