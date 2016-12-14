@@ -335,12 +335,21 @@ public class BluetoothLEHardwareInterface
 		}
 	}
 	
-	public static void WriteCharacteristic (string name, string service, string characteristic, byte[] data, int length, bool withResponse, Action<string> action)
+	public static void WriteCharacteristic (
+		string name, 
+		string service, 
+		string characteristic, 
+		byte[] data, int length, 
+		bool withResponse, 
+		Action<string> action,
+		Action<string> errorAction = null)
 	{
 		if (!Application.isEditor)
 		{
-			if (bluetoothDeviceScript != null)
+			if (bluetoothDeviceScript != null) {
 				bluetoothDeviceScript.DidWriteCharacteristicAction = action;
+				bluetoothDeviceScript.ErrorAction = errorAction;
+			}
 			
 #if UNITY_IPHONE
 			_iOSBluetoothLEWriteCharacteristic (name, service, characteristic, data, length, withResponse);

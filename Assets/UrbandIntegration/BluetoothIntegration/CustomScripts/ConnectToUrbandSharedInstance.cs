@@ -73,7 +73,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	public void InitBluetoothLE(System.Action action){
 		BluetoothLEHardwareInterface.Initialize (true, false, () => {
 			if(deviceIsSelected)
-				beginConnection();
+				InitConnection();
 			else
 				action();
 		}, (error) => {
@@ -84,17 +84,24 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	{
 		_connectedID = addressText;
 		deviceIsSelected = true;
+		InitConnection();
+	}
+
+	public void InitConnection(){
 		beginConnection((connectionOk) => {
+			Debug.Log("============================= Se conecto?: " + connectionOk);
 			if(connectionOk)
 				firstConnection();
 			else
-				beginConnection();
+				InitConnection();
 		});
 	}
 
-	public void OnDisConnect ()
+	public void OnDisConnect (System.Action action)
 	{
-		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, null);
+		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, (resp) =>{
+			action();
+		});
 	}
 
 	// Write Characteristic
@@ -102,7 +109,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		byte[] value,
 		string _serviceUUID,
 		string _writeCharacteristicUUID,
-		System.Action<string> action
+		System.Action<string> action,
+		System.Action<string> errorAction = null
 		)
 	{
 		BluetoothLEHardwareInterface.WriteCharacteristic (
@@ -112,7 +120,11 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 			value, value.Length, true, (characteristicUUID) => {
 				BluetoothLEHardwareInterface.Log ("Write Succeeded");
 				action(characteristicUUID);
-			});
+			},
+			(error) => {
+				errorAction(error);
+			}
+		);
 	}
 
 	// Init connection
@@ -241,7 +253,13 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 							urbanConnected = true;
 							// Suscribe to gesture service again
 							firstConnection();
-						});
+						},
+						(error) => {
+							Debug.Log("============================= Error On Send Segurity: " + error);
+							isFirstSecure = true;
+							connectSegureService();
+						}
+					);
 				}
 			}, 
 			(deviceAddress2, characteristic, data) => {
