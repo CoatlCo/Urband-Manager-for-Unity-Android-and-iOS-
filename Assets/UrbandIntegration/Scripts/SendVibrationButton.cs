@@ -17,7 +17,6 @@ public class SendVibrationButton : MonoBehaviour {
 	
 	void TaskOnClick(){
 		// Stop device Scan
-		BluetoothLEHardwareInterface.StopScan ();
 		connectToDevice.MakeUrbandRumble ();
 	}
 }
