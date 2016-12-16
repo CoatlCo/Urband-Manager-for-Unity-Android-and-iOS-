@@ -17,6 +17,19 @@ public class SendVibrationButton : MonoBehaviour {
 	
 	void TaskOnClick(){
 		// Stop device Scan
-		connectToDevice.MakeUrbandRumble ();
+		connectToDevice.MakeUrbandRumble (
+			0,
+			50,
+			100,
+			100,
+			0, 
+			10,
+			10,
+			0,
+			0,
+			"FF",
+			"FF",
+			"00"
+		);
 	}
 }

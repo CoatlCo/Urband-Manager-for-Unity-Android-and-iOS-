@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 
 public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	// Private Vars
@@ -91,7 +92,6 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 	public void InitConnection(){
 		beginConnection((connectionOk) => {
-			Debug.Log("============================= Se conecto?: " + connectionOk);
 			if(connectionOk)
 				firstConnection();
 			else
@@ -150,7 +150,6 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 				}, (error) => {
 					//On connection error
-					Debug.Log("============================= Error On Connect: " + error);
 					action(false);
 				},
 				(address) => {
@@ -195,7 +194,6 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 				// Afther urband is secure connected, Listen and notify urband gestures
 				if(urbanConnected)
 				{
-					Debug.Log("----------- >>>>>>>>>>>>> Gesture: " + data[0]);
 					if(!listenUrbandMeasure){
 						//Listen mode deactivated
 
@@ -257,7 +255,6 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 							firstConnection();
 						},
 						(error) => {
-							Debug.Log("============================= Error On Send Segurity: " + error);
 							isFirstSecure = true;
 							connectSegureService();
 						}
@@ -270,21 +267,85 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		);
 	}
 
-	public void MakeUrbandRumble(){
+	public void MakeUrbandRumble(
+		int vibrationIntensityInitialTime = 0,
+		int vibrationIntensityEndTime = 100,
+		int LEDbrightnessLevelInitialTime = 0,
+		int LEDbrightnessLevelEndTime = 100,
+		int LEDbrightnessVibrationDelayTime = 0,
+		int LEDbrightnessVibrationTrancisionTime = 5,
+		int LEDbrightnessVibrationDurationTime = 10,
+		int LEDbrightnessVibrationDownTime = 0,
+		int LEDbrightnessVibrationOffTime = 0,
+		string redColor = "FF",
+		string greenColor = "FF",
+		string blueColor = "FF"
+	){
+		byte redByte = Convert.ToByte (redColor.Substring (0, 2), 16);
+		byte greenByte = Convert.ToByte (greenColor.Substring (0, 2), 16);
+		byte blueByte = Convert.ToByte (blueColor.Substring (0, 2), 16);
 		// Send rumble action data to Urband
-		Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble");
-		byte[] value = new byte[] { 0x00,0x64,0x00,0x64,0x00,0x64,0x00,0x50,0x00,0x00,0x00,0xFF };
+		byte[] value = new byte[] {
+			IntToHex(vibrationIntensityInitialTime),
+			IntToHex(vibrationIntensityEndTime),
+			IntToHex(LEDbrightnessLevelInitialTime),
+			IntToHex(LEDbrightnessLevelEndTime),
+			IntToHex(LEDbrightnessVibrationDelayTime * 10),
+			IntToHex(LEDbrightnessVibrationTrancisionTime * 10),
+			IntToHex(LEDbrightnessVibrationDurationTime * 10),
+			IntToHex(LEDbrightnessVibrationDownTime * 10),
+			IntToHex(LEDbrightnessVibrationOffTime * 10),
+			redByte,
+			greenByte,
+			blueByte
+		};
 		SendByte(value, Haptics, HapticsConfig, (action) => {
-			Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble HapticsConfig: " + action);
 			byte[] value2 = new byte[] { (byte)0x01 };
 			SendByte(value2, Haptics, HapticsControl, (action2) => {});	
 		});
 	}
 
-	/*int IntToHex(){
-		// Store integer 182
-		int intValue = 182;
+	/*public void MakeUrbandRumble(
+		int vibrationIntensityInitialTime = 0,
+		int vibrationIntensityEndTime = 100,
+		int LEDbrightnessLevelInitialTime = 0,
+		int LEDbrightnessLevelEndTime = 100,
+		int LEDbrightnessVibrationDelayTime = 0,
+		int LEDbrightnessVibrationTrancisionTime = 50,
+		int LEDbrightnessVibrationDurationTime = 50,
+		int LEDbrightnessVibrationDownTime = 0,
+		string redColor = "FF",
+		string greenColor = "FF",
+		string blueColor = "FF"
+	){
+		byte redByte = Convert.ToByte (redColor);
+		byte greenByte = Convert.ToByte (greenColor);
+		byte blueByte = Convert.ToByte (blueColor);
+		// Send rumble action data to Urband
+		byte[] value = new byte[] {
+			IntToHex(vibrationIntensityInitialTime),
+			IntToHex(vibrationIntensityEndTime),
+			IntToHex(LEDbrightnessLevelInitialTime),
+			IntToHex(LEDbrightnessLevelEndTime),
+			IntToHex(LEDbrightnessVibrationDelayTime),
+			IntToHex(LEDbrightnessVibrationTrancisionTime),
+			IntToHex(LEDbrightnessVibrationDurationTime),
+			IntToHex(LEDbrightnessVibrationDownTime),
+			redByte,
+			greenByte,
+			blueByte
+		};
+		SendByte(value, Haptics, HapticsConfig, (action) => {
+			byte[] value2 = new byte[] { (byte)0x01 };
+			SendByte(value2, Haptics, HapticsControl, (action2) => {});	
+		});
+	}*/
+
+	byte IntToHex(int intValue){
 		// Convert integer 182 as a hex in a string variable
 		string hexValue = intValue.ToString("X");
-	}*/
+		int restult = int.Parse (hexValue);
+		byte byteResult = Convert.ToByte (restult);
+		return byteResult;
+	}
 }
