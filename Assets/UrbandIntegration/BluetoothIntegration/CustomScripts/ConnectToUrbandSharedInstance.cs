@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 
 public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	// Private Vars
@@ -40,6 +41,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 	private int count = 0;
 
+	private BluetoothDeviceScript bluetoothDevScript;
+
 	// Public Vars
 	public bool urbanDetected = false;
 	public bool urbanConnected = false;
@@ -60,36 +63,45 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		}
 	}
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
+	// It initializes all the operation of bluetooth LE
+	// To not initialize the bluetooth engine more than once,
+	// Use the isFirst variable in true only the first time the Bluetooth engine is initialized
+	// In the other scenes call the initializer with the variable isFirst in false
 	public void InitBluetoothLE(System.Action action){
 		BluetoothLEHardwareInterface.Initialize (true, false, () => {
 			if(deviceIsSelected)
-				beginConnection();
+				InitConnection();
 			else
 				action();
 		}, (error) => {
 		});
 	}
 
+	// Save the mac address of the bluetooth device
+	// Connects to the bluetooth device
 	public void OnConnect (string addressText)
 	{
 		_connectedID = addressText;
 		deviceIsSelected = true;
-		beginConnection();
+		InitConnection();
 	}
 
-	public void OnDisConnect ()
+	// Try to start and establish the connection with the device
+	public void InitConnection(){
+		beginConnection((connectionOk) => {
+			if(connectionOk)
+				firstConnection();
+			else
+				InitConnection();
+		});
+	}
+
+	// Ends the connection with the bluetooth device
+	public void OnDisConnect (System.Action action)
 	{
-		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, null);
+		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, (resp) =>{
+			action();
+		});
 	}
 
 	// Write Characteristic
@@ -97,7 +109,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		byte[] value,
 		string _serviceUUID,
 		string _writeCharacteristicUUID,
-		System.Action<string> action
+		System.Action<string> action,
+		System.Action<string> errorAction = null
 		)
 	{
 		BluetoothLEHardwareInterface.WriteCharacteristic (
@@ -106,17 +119,20 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 			_writeCharacteristicUUID, 
 			value, value.Length, true, (characteristicUUID) => {
 				BluetoothLEHardwareInterface.Log ("Write Succeeded");
-				Debug.Log("----------- ---------- >>>>>>>>>>>>> Chars: " + characteristicUUID);
 				action(characteristicUUID);
-			});
+			},
+			(error) => {
+				errorAction(error);
+			}
+		);
 	}
 
 	// Init connection
-	void beginConnection() {
+	void beginConnection(System.Action<bool> action) {
 		if (!_connecting) {
 			BluetoothLEHardwareInterface.ConnectToPeripheral (_connectedID, 
 				(address) => {
-					// on Connection Action
+					// On Connection Action
 				},
 				(address, serviceUUID) => {
 					// Service detection
@@ -127,10 +143,14 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 					if (count < serviceLimit)
 						count++;
 					else {
-						firstConnection ();
+						action(true);
 					}
 
-				}, (address) => {
+				}, (error) => {
+					//On connection error
+					action(false);
+				},
+				(address) => {
 				// this will get called when the device disconnects
 				// be aware that this will also get called when the disconnect
 				// is called above. both methods get call for the same action
@@ -140,7 +160,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 
 			_connecting = true;
 		} else {
-			firstConnection ();
+			action(true);
 		}
 	}
 
@@ -172,7 +192,6 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 				// Afther urband is secure connected, Listen and notify urband gestures
 				if(urbanConnected)
 				{
-					Debug.Log("----------- >>>>>>>>>>>>> Gesture: " + data[0]);
 					if(!listenUrbandMeasure){
 						//Listen mode deactivated
 
@@ -226,13 +245,33 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 						SecureService, 
 						SecureServiceConnection,
 						(action2) => {
-							Debug.Log("Connected");
 							sendConnection = false;
 							// Notify that Urband is connected
 							urbanConnected = true;
+							// Se envia una peticion para que la urband vibre y confirmar la conneccion
+							MakeUrbandRumble(
+								0,
+								50,
+								100,
+								100,
+								0, 
+								10,
+								10,
+								0,
+								5,
+								"FF",
+								"FF",
+								"FF",
+								2
+							);
 							// Suscribe to gesture service again
 							firstConnection();
-						});
+						},
+						(error) => {
+							isFirstSecure = true;
+							connectSegureService();
+						}
+					);
 				}
 			}, 
 			(deviceAddress2, characteristic, data) => {
@@ -241,21 +280,63 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		);
 	}
 
-	public void MakeUrbandRumble(){
+	// It allows to configure the necessary parameters to control the way the urband vibrates
+	// And also the parameters to control the color, brightness and duration of the notification LED
+	// The parameters are:
+	// vibrationIntensityInitialTime, vibrationIntensityEndTime
+		// LEDbrightnessLevelInitialTime, LEDbrightnessLevelEndTime
+			// Are of integer type and the allowed values go from 0 to 100
+	// LEDbrightnessVibrationDelayTime, LEDbrightnessVibrationTrancisionTime, LEDbrightnessVibrationDurationTime
+		// LEDbrightnessVibrationDownTime, LEDbrightnessVibrationOffTime
+			// Are integer type and the allowed values range from 0 to 22 and are increments of 10 milliseconds
+	// redColor, greenColor, blueColor
+		// They are of type string and represent a color in RGB format
+	// LEDbrightnessVibrationRepetitions
+		// It is integer type and allowed values range from 0 to 50
+	public void MakeUrbandRumble(
+		int vibrationIntensityInitialTime = 0,
+		int vibrationIntensityEndTime = 100,
+		int LEDbrightnessLevelInitialTime = 0,
+		int LEDbrightnessLevelEndTime = 100,
+		int LEDbrightnessVibrationDelayTime = 0,
+		int LEDbrightnessVibrationTrancisionTime = 5,
+		int LEDbrightnessVibrationDurationTime = 10,
+		int LEDbrightnessVibrationDownTime = 0,
+		int LEDbrightnessVibrationOffTime = 0,
+		string redColor = "FF",
+		string greenColor = "FF",
+		string blueColor = "FF",
+		int LEDbrightnessVibrationRepetitions = 1
+	){
+		byte redByte = Convert.ToByte (redColor.Substring (0, 2), 16);
+		byte greenByte = Convert.ToByte (greenColor.Substring (0, 2), 16);
+		byte blueByte = Convert.ToByte (blueColor.Substring (0, 2), 16);
 		// Send rumble action data to Urband
-		/*Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble");
-		byte[] value = new byte[] { 0x00,0x64,0x00,0x64,0x00,0x64,0x00,0x50,0x00,0x00,0x00,0x00 };
+		byte[] value = new byte[] {
+			IntToHex(vibrationIntensityInitialTime),
+			IntToHex(vibrationIntensityEndTime),
+			IntToHex(LEDbrightnessLevelInitialTime),
+			IntToHex(LEDbrightnessLevelEndTime),
+			IntToHex(LEDbrightnessVibrationDelayTime * 10),
+			IntToHex(LEDbrightnessVibrationTrancisionTime * 10),
+			IntToHex(LEDbrightnessVibrationDurationTime * 10),
+			IntToHex(LEDbrightnessVibrationDownTime * 10),
+			IntToHex(LEDbrightnessVibrationOffTime * 10),
+			redByte,
+			greenByte,
+			blueByte
+		};
 		SendByte(value, Haptics, HapticsConfig, (action) => {
-			Debug.Log("---------------- >>>>>>>>>>>>>>>>>>> MakeUrbandRumble HapticsConfig: " + action);
-			byte[] value2 = new byte[] { (byte)0x01 };
+			byte[] value2 = new byte[] { IntToHex(LEDbrightnessVibrationRepetitions) };
 			SendByte(value2, Haptics, HapticsControl, (action2) => {});	
-		});*/
+		});
 	}
 
-	/*int IntToHex(){
-		// Store integer 182
-		int intValue = 182;
-		// Convert integer 182 as a hex in a string variable
+	// Converts an integer to its hexadecimal equivalent
+	byte IntToHex(int intValue){
 		string hexValue = intValue.ToString("X");
-	}*/
+		int restult = int.Parse (hexValue);
+		byte byteResult = Convert.ToByte (restult);
+		return byteResult;
+	}
 }

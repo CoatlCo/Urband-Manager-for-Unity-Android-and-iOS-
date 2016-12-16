@@ -29,6 +29,18 @@ public class BluetoothDeviceScript : MonoBehaviour
 
 	private bool Initialized;
 
+	public static BluetoothDeviceScript Instance;
+
+	void Awake()
+	{
+		if (Instance == null) {
+			DontDestroyOnLoad (gameObject);
+			Instance = this;
+		} else if (Instance != this) {
+			Destroy (gameObject);
+		}
+	}
+
 	// Use this for initialization
 	void Start ()
 	{

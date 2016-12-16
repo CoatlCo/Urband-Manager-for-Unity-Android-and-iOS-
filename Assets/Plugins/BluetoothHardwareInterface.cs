@@ -114,39 +114,38 @@ public class BluetoothLEHardwareInterface
 		}
 	}
 
-	public static BluetoothDeviceScript Initialize (bool asCentral, bool asPeripheral, Action action, Action<string> errorAction)
+	public static BluetoothDeviceScript Initialize (
+		bool asCentral,
+		bool asPeripheral,
+		Action action, 
+		Action<string> errorAction
+	)
 	{
 		bluetoothDeviceScript = null;
 
-		if (GameObject.Find("BluetoothLEReceiver") == null)
-		{
-			GameObject bluetoothLEReceiver = new GameObject("BluetoothLEReceiver");
-			bluetoothDeviceScript = bluetoothLEReceiver.AddComponent<BluetoothDeviceScript>();
-			if (bluetoothDeviceScript != null)
-			{
-				bluetoothDeviceScript.InitializedAction = action;
-				bluetoothDeviceScript.ErrorAction = errorAction;
-			}
+		GameObject bluetoothLEReceiver = GameObject.Find ("BluetoothLEReceiver");
+		bluetoothDeviceScript = bluetoothLEReceiver.GetComponent<BluetoothDeviceScript> ();
+
+		if (bluetoothDeviceScript != null) {
+			bluetoothDeviceScript.InitializedAction = action;
+			bluetoothDeviceScript.ErrorAction = errorAction;
 		}
-		
-		if (Application.isEditor)
-		{
+
+		if (Application.isEditor) {
 			if (bluetoothDeviceScript != null)
 				bluetoothDeviceScript.SendMessage ("OnBluetoothMessage", "Initialized");
-		}
-		else
-		{
+		} else {
 #if UNITY_IPHONE
-			_iOSBluetoothLEInitialize (asCentral, asPeripheral);
+				_iOSBluetoothLEInitialize (asCentral, asPeripheral);
 #elif UNITY_ANDROID
-			if (_android == null)
-			{
-				AndroidJavaClass javaClass = new AndroidJavaClass ("com.shatalmic.unityandroidbluetoothlelib.UnityBluetoothLE");
-				_android = javaClass.CallStatic<AndroidJavaObject> ("getInstance");
-			}
+		if (_android == null)
+		{
+			AndroidJavaClass javaClass = new AndroidJavaClass ("com.shatalmic.unityandroidbluetoothlelib.UnityBluetoothLE");
+			_android = javaClass.CallStatic<AndroidJavaObject> ("getInstance");
+		}
 
-			if (_android != null)
-				_android.Call ("androidBluetoothInitialize", asCentral, asPeripheral);
+		if (_android != null)
+			_android.Call ("androidBluetoothInitialize", asCentral, asPeripheral);
 #endif
 		}
 
@@ -275,7 +274,13 @@ public class BluetoothLEHardwareInterface
 		}
 	}
 	
-	public static void ConnectToPeripheral (string name, Action<string> connectAction, Action<string, string> serviceAction, Action<string, string, string> characteristicAction, Action<string> disconnectAction = null)
+	public static void ConnectToPeripheral (
+		string name,
+		Action<string> connectAction, 
+		Action<string, string> serviceAction, 
+		Action<string, string, string> characteristicAction,
+		Action<string> errorAction = null,
+		Action<string> disconnectAction = null)
 	{
 		if (!Application.isEditor)
 		{
@@ -285,6 +290,7 @@ public class BluetoothLEHardwareInterface
 				bluetoothDeviceScript.DiscoveredServiceAction = serviceAction;
 				bluetoothDeviceScript.DiscoveredCharacteristicAction = characteristicAction;
 				bluetoothDeviceScript.ConnectedDisconnectPeripheralAction = disconnectAction;
+				bluetoothDeviceScript.ErrorAction = errorAction;
 			}
 
 #if UNITY_IPHONE
@@ -328,12 +334,21 @@ public class BluetoothLEHardwareInterface
 		}
 	}
 	
-	public static void WriteCharacteristic (string name, string service, string characteristic, byte[] data, int length, bool withResponse, Action<string> action)
+	public static void WriteCharacteristic (
+		string name, 
+		string service, 
+		string characteristic, 
+		byte[] data, int length, 
+		bool withResponse, 
+		Action<string> action,
+		Action<string> errorAction = null)
 	{
 		if (!Application.isEditor)
 		{
-			if (bluetoothDeviceScript != null)
+			if (bluetoothDeviceScript != null) {
 				bluetoothDeviceScript.DidWriteCharacteristicAction = action;
+				bluetoothDeviceScript.ErrorAction = errorAction;
+			}
 			
 #if UNITY_IPHONE
 			_iOSBluetoothLEWriteCharacteristic (name, service, characteristic, data, length, withResponse);
