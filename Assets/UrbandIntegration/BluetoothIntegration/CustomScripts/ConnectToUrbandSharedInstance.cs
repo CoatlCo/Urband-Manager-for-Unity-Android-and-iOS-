@@ -67,8 +67,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 	// To not initialize the bluetooth engine more than once,
 	// Use the isFirst variable in true only the first time the Bluetooth engine is initialized
 	// In the other scenes call the initializer with the variable isFirst in false
-	public void InitBluetoothLE(bool isFirst, System.Action action){
-		BluetoothLEHardwareInterface.Initialize (true, false, isFirst, () => {
+	public void InitBluetoothLE(System.Action action){
+		BluetoothLEHardwareInterface.Initialize (true, false, () => {
 			if(deviceIsSelected)
 				InitConnection();
 			else

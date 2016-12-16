@@ -11,7 +11,7 @@ public class DetectDevice : MonoBehaviour
 
 	public void Initialize ()
 	{
-		connectToDevice.InitBluetoothLE (true, () => {
+		connectToDevice.InitBluetoothLE (() => {
 			OnScan ();	
 		});
 	}

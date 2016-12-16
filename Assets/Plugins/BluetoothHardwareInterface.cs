@@ -117,42 +117,36 @@ public class BluetoothLEHardwareInterface
 	public static BluetoothDeviceScript Initialize (
 		bool asCentral,
 		bool asPeripheral,
-		bool isFirst,
 		Action action, 
 		Action<string> errorAction
 	)
 	{
-		if (isFirst) {
-			bluetoothDeviceScript = null;
+		bluetoothDeviceScript = null;
 
-			GameObject bluetoothLEReceiver = GameObject.Find ("BluetoothLEReceiver");
-			bluetoothDeviceScript = bluetoothLEReceiver.GetComponent<BluetoothDeviceScript> ();
+		GameObject bluetoothLEReceiver = GameObject.Find ("BluetoothLEReceiver");
+		bluetoothDeviceScript = bluetoothLEReceiver.GetComponent<BluetoothDeviceScript> ();
 
-			if (bluetoothDeviceScript != null) {
-				bluetoothDeviceScript.InitializedAction = action;
-				bluetoothDeviceScript.ErrorAction = errorAction;
-			}
+		if (bluetoothDeviceScript != null) {
+			bluetoothDeviceScript.InitializedAction = action;
+			bluetoothDeviceScript.ErrorAction = errorAction;
+		}
 
-			if (Application.isEditor) {
-				if (bluetoothDeviceScript != null)
-					bluetoothDeviceScript.SendMessage ("OnBluetoothMessage", "Initialized");
-			} else {
+		if (Application.isEditor) {
+			if (bluetoothDeviceScript != null)
+				bluetoothDeviceScript.SendMessage ("OnBluetoothMessage", "Initialized");
+		} else {
 #if UNITY_IPHONE
 				_iOSBluetoothLEInitialize (asCentral, asPeripheral);
 #elif UNITY_ANDROID
 		if (_android == null)
 		{
-			Debug.Log("================================ Android is null");
 			AndroidJavaClass javaClass = new AndroidJavaClass ("com.shatalmic.unityandroidbluetoothlelib.UnityBluetoothLE");
 			_android = javaClass.CallStatic<AndroidJavaObject> ("getInstance");
-		} else {
-			Debug.Log("================================ Android not null");
 		}
 
 		if (_android != null)
 			_android.Call ("androidBluetoothInitialize", asCentral, asPeripheral);
 #endif
-			}
 		}
 
 		return bluetoothDeviceScript;
