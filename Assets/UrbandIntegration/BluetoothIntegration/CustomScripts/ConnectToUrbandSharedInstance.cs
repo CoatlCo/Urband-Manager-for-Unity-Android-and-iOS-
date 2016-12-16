@@ -63,16 +63,10 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		}
 	}
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
+	// It initializes all the operation of bluetooth LE
+	// To not initialize the bluetooth engine more than once,
+	// Use the isFirst variable in true only the first time the Bluetooth engine is initialized
+	// In the other scenes call the initializer with the variable isFirst in false
 	public void InitBluetoothLE(bool isFirst, System.Action action){
 		BluetoothLEHardwareInterface.Initialize (true, false, isFirst, () => {
 			if(deviceIsSelected)
@@ -83,6 +77,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		});
 	}
 
+	// Save the mac address of the bluetooth device
+	// Connects to the bluetooth device
 	public void OnConnect (string addressText)
 	{
 		_connectedID = addressText;
@@ -90,6 +86,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		InitConnection();
 	}
 
+	// Try to start and establish the connection with the device
 	public void InitConnection(){
 		beginConnection((connectionOk) => {
 			if(connectionOk)
@@ -99,6 +96,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		});
 	}
 
+	// Ends the connection with the bluetooth device
 	public void OnDisConnect (System.Action action)
 	{
 		BluetoothLEHardwareInterface.DisconnectPeripheral (_connectedID, (resp) =>{
@@ -134,7 +132,7 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		if (!_connecting) {
 			BluetoothLEHardwareInterface.ConnectToPeripheral (_connectedID, 
 				(address) => {
-					// on Connection Action
+					// On Connection Action
 				},
 				(address, serviceUUID) => {
 					// Service detection
@@ -250,7 +248,22 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 							sendConnection = false;
 							// Notify that Urband is connected
 							urbanConnected = true;
-							MakeUrbandRumble();
+							// Se envia una peticion para que la urband vibre y confirmar la conneccion
+							MakeUrbandRumble(
+								0,
+								50,
+								100,
+								100,
+								0, 
+								10,
+								10,
+								0,
+								5,
+								"FF",
+								"FF",
+								"FF",
+								2
+							);
 							// Suscribe to gesture service again
 							firstConnection();
 						},
@@ -267,6 +280,19 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		);
 	}
 
+	// It allows to configure the necessary parameters to control the way the urband vibrates
+	// And also the parameters to control the color, brightness and duration of the notification LED
+	// The parameters are:
+	// vibrationIntensityInitialTime, vibrationIntensityEndTime
+		// LEDbrightnessLevelInitialTime, LEDbrightnessLevelEndTime
+			// Are of integer type and the allowed values go from 0 to 100
+	// LEDbrightnessVibrationDelayTime, LEDbrightnessVibrationTrancisionTime, LEDbrightnessVibrationDurationTime
+		// LEDbrightnessVibrationDownTime, LEDbrightnessVibrationOffTime
+			// Are integer type and the allowed values range from 0 to 22 and are increments of 10 milliseconds
+	// redColor, greenColor, blueColor
+		// They are of type string and represent a color in RGB format
+	// LEDbrightnessVibrationRepetitions
+		// It is integer type and allowed values range from 0 to 50
 	public void MakeUrbandRumble(
 		int vibrationIntensityInitialTime = 0,
 		int vibrationIntensityEndTime = 100,
@@ -279,7 +305,8 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 		int LEDbrightnessVibrationOffTime = 0,
 		string redColor = "FF",
 		string greenColor = "FF",
-		string blueColor = "FF"
+		string blueColor = "FF",
+		int LEDbrightnessVibrationRepetitions = 1
 	){
 		byte redByte = Convert.ToByte (redColor.Substring (0, 2), 16);
 		byte greenByte = Convert.ToByte (greenColor.Substring (0, 2), 16);
@@ -300,49 +327,13 @@ public class ConnectToUrbandSharedInstance : MonoBehaviour {
 			blueByte
 		};
 		SendByte(value, Haptics, HapticsConfig, (action) => {
-			byte[] value2 = new byte[] { (byte)0x01 };
+			byte[] value2 = new byte[] { IntToHex(LEDbrightnessVibrationRepetitions) };
 			SendByte(value2, Haptics, HapticsControl, (action2) => {});	
 		});
 	}
 
-	/*public void MakeUrbandRumble(
-		int vibrationIntensityInitialTime = 0,
-		int vibrationIntensityEndTime = 100,
-		int LEDbrightnessLevelInitialTime = 0,
-		int LEDbrightnessLevelEndTime = 100,
-		int LEDbrightnessVibrationDelayTime = 0,
-		int LEDbrightnessVibrationTrancisionTime = 50,
-		int LEDbrightnessVibrationDurationTime = 50,
-		int LEDbrightnessVibrationDownTime = 0,
-		string redColor = "FF",
-		string greenColor = "FF",
-		string blueColor = "FF"
-	){
-		byte redByte = Convert.ToByte (redColor);
-		byte greenByte = Convert.ToByte (greenColor);
-		byte blueByte = Convert.ToByte (blueColor);
-		// Send rumble action data to Urband
-		byte[] value = new byte[] {
-			IntToHex(vibrationIntensityInitialTime),
-			IntToHex(vibrationIntensityEndTime),
-			IntToHex(LEDbrightnessLevelInitialTime),
-			IntToHex(LEDbrightnessLevelEndTime),
-			IntToHex(LEDbrightnessVibrationDelayTime),
-			IntToHex(LEDbrightnessVibrationTrancisionTime),
-			IntToHex(LEDbrightnessVibrationDurationTime),
-			IntToHex(LEDbrightnessVibrationDownTime),
-			redByte,
-			greenByte,
-			blueByte
-		};
-		SendByte(value, Haptics, HapticsConfig, (action) => {
-			byte[] value2 = new byte[] { (byte)0x01 };
-			SendByte(value2, Haptics, HapticsControl, (action2) => {});	
-		});
-	}*/
-
+	// Converts an integer to its hexadecimal equivalent
 	byte IntToHex(int intValue){
-		// Convert integer 182 as a hex in a string variable
 		string hexValue = intValue.ToString("X");
 		int restult = int.Parse (hexValue);
 		byte byteResult = Convert.ToByte (restult);
